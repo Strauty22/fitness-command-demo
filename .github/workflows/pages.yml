@@ -1,0 +1,52 @@
+name: Validate and prepare Pages demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to GitHub Pages (explicit opt-in)
+        type: boolean
+        default: false
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fitness-command-demo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build web --release --base-href /fitness-command-demo/
+      - run: touch build/web/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy explicitly requested build
+        id: deployment
+        uses: actions/deploy-pages@v4
