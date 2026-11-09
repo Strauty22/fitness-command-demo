@@ -108,30 +108,35 @@ void main() {
     },
   );
 
-  test(
-    'fresh map tiles load from persistent cache without a network request',
-    () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      final repo = MapTileRepository(db);
-      try {
-        final bytes = Uint8List.fromList([1, 2, 3]);
-        await db.customStatement(
-          'INSERT INTO ride_map_tiles(tile_key,bytes,expires_at,fetched_at) VALUES (?,?,?,?)',
-          [
-            '2/1/1',
-            bytes,
-            DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch,
-            DateTime.now().millisecondsSinceEpoch,
-          ],
-        );
-        expect(await repo.tile(2, 1, 1), bytes);
-        expect(repo.unavailable.value, false);
-      } finally {
-        repo.close();
-        await db.close();
-      }
-    },
-  );
+  test('demo map stays synthetic with or without cached native tiles', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final repo = MapTileRepository(db);
+    try {
+      expect(await repo.tile(2, 1, 1), isNull);
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      await db.customStatement(
+        'INSERT INTO ride_map_tiles(tile_key,bytes,expires_at,fetched_at) VALUES (?,?,?,?)',
+        [
+          '2/1/1',
+          bytes,
+          DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch,
+          DateTime.now().millisecondsSinceEpoch,
+        ],
+      );
+      expect(await repo.tile(2, 1, 1), isNull);
+      // The demo does not display or alter leftover native map cache data.
+      final cached = await db
+          .customSelect('SELECT bytes FROM ride_map_tiles')
+          .getSingle();
+      expect(cached.read<Uint8List>('bytes'), bytes);
+      repo.retry();
+      expect(await repo.tile(2, 1, 1), isNull);
+      expect(repo.unavailable.value, false);
+    } finally {
+      repo.close();
+      await db.close();
+    }
+  });
 
   test(
     'preview restarts on re-entry, stops while recording and ignores rejected GPS jumps',

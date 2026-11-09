@@ -16,7 +16,8 @@ void main() {
         ('test', 'Test'),
         ('great ride with wes', 'Great ride with wes'),
         ('  123 - standing Bear', '  123 - Standing Bear'),
-        ('?cole w WES', '?cole w WES'),
+        ('\u00e9cole w WES', '\u00c9cole w WES'),
+        ('?cole w WES', '?Cole w WES'),
         ('GREAT ride', 'GREAT ride'),
         ('123 !', '123 !'),
         ('', ''),
@@ -32,7 +33,7 @@ void main() {
     },
   );
   test(
-    'preserves selection when editing in the middle, including Unicode case expansion',
+    'preserves selection when editing in the middle, including Unicode casing',
     () {
       final result = formatter.formatEditUpdate(
         input('Standing Bear'),
@@ -42,10 +43,13 @@ void main() {
       expect(result.selection.baseOffset, 10);
       final expanded = formatter.formatEditUpdate(
         TextEditingValue.empty,
-        input('?eta', cursor: 1),
+        input('\u00dfeta', cursor: 1),
       );
-      expect(expanded.text, '${'?'.toUpperCase()}eta');
-      expect(expanded.selection.baseOffset, '?'.toUpperCase().length);
+      // Use Dart's mapping: some runtimes preserve sharp s, while a mapping
+      // that expands it must shift the UTF-16 cursor by the same amount.
+      final upper = '\u00df'.toUpperCase();
+      expect(expanded.text, '${upper}eta');
+      expect(expanded.selection.baseOffset, upper.length);
     },
   );
   test(
