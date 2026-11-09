@@ -13,6 +13,9 @@ This folder is a separate project with an isolated browser database.
 - Original dark green/black screens and navigation.
 - Six compact workouts: Tuesday A/B, Thursday A/B, Saturday A/B, with the
   original exercise definitions and relevant workout/logging logic.
+- Template targets and alternatives load from `assets/data/workout_templates.json`,
+  including its Misc Workout. A one-time update preserves existing sample history,
+  active session actuals and subsequent browser-local template edits.
 - Exercise and target editing, actual set logging, workout completion,
   custom workouts, History, Progress and Personal Bests.
 - Three fictional strength sessions with increasing sample loads, plus one

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'core/database/app_database.dart';
 import 'demo/sample_data.dart';
+import 'demo/workout_templates.dart';
 
 void main() => runApp(const DemoBootstrap());
 
@@ -14,7 +15,12 @@ class DemoBootstrap extends StatefulWidget {
 
 class _DemoBootstrapState extends State<DemoBootstrap> {
   final database = AppDatabase();
-  late Future<void> ready = seedDemo(database);
+  Future<void> prepareDemo() async {
+    await seedDemo(database);
+    await loadDemoWorkoutTemplates(database);
+  }
+
+  late Future<void> ready = prepareDemo();
   @override
   void dispose() {
     database.close();
@@ -47,7 +53,7 @@ class _DemoBootstrapState extends State<DemoBootstrap> {
                         ),
                         TextButton(
                           onPressed: () => setState(() {
-                            ready = seedDemo(database);
+                            ready = prepareDemo();
                           }),
                           child: const Text('Retry'),
                         ),
